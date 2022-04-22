@@ -18,23 +18,33 @@ def ll_complete_set_ratio(comp, alpha, counts, data, levels, cache):
         comp: Clique or separator.
         alpha: Pseudo counts for each cell.
     """
+    # import pdb; pdb.set_trace()
     if comp not in counts:
         counts[comp] = aux.get_marg_counts(data, list(comp))
     if comp not in cache:
         nodes = list(comp)
-        c1 = dirichlet.log_norm_constant_multidim(counts[comp],
-                                                  alpha,
-                                                  levels[nodes])
-
         c2 = dirichlet.log_norm_constant_multidim({},
                                                   alpha,
                                                   levels[nodes])
-
+        if len(nodes):
+            c1 = dirichlet.log_norm_constant_multidim(counts[comp],
+                                                      alpha,
+                                                      levels[nodes])
+        else:
+            c1 = c2
+       
         cache[comp] = c1 - c2
     return cache[comp]
 
 
-def log_likelihood_partial(cliques, separators, no_levels, cell_alpha, counts, data, levels, cache):
+def log_likelihood_partial(cliques,
+                           separators,
+                           no_levels,
+                           cell_alpha,
+                           counts,
+                           data,
+                           levels,
+                           cache):
     cliques_constants = 0.0
     tot_no_cells = np.prod([l for l in no_levels])
 

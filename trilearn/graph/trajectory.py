@@ -18,11 +18,14 @@ class Trajectory:
     """
     def __init__(self):
         self.trajectory = []
-        self.time = []
+        self.time = 0.0
         self.seqdist = None
         self.burnin = 0
         self.logl = []
         self._size = []
+        self._jtsize = []
+        self.n_samples = 0
+        self.n_updates = 0
 
     def set_sampling_method(self, method):
         self.sampling_method = method
@@ -76,24 +79,43 @@ class Trajectory:
 
     def maximum_likelihood_graph(self):
         ml_ind = self.log_likelihood().idxmax()
-        return self.trajectory[ml_ind]
+        if nx.is_tree(self.trajectory[ml_ind]):
+            return jtlib.graph(self.trajectory[ml_ind])
+        else:
+            return self.trajectory[ml_ind]
 
+
+    def jtsize(self, from_index=0):
+        """ Plots the auto-correlation function of the graph size (number of edges)
+        Args:
+            from_index (int): Burn-in period, default=0.
+        """
+        if self._jtsize ==[]:
+            self._jtsize = [g.size() for g in self.trajectory[from_index:]]
+        return pd.Series(self._jtsize)
+        
     def size(self, from_index=0):
         """ Plots the auto-correlation function of the graph size (number of edges)
         Args:
             from_index (int): Burn-in period, default=0.
         """
         if self._size == []:
-            self._size = [g.size() for g in self.trajectory[from_index:]]
+            if nx.is_tree(self.trajectory[0]):
+                return self.jtsize(from_index)
+            else:
+                self._size = [jtlib.graph(g).size() for g in self.trajectory[from_index:]]
         return pd.Series(self._size)
 
     def write_file(self, filename=None, optional={}):
         """ Writes a Trajectory together with the corresponding
         sequential distribution to a json-file.
         """
-
+        
         def default(o):
-            if isinstance(o, np.int64): return int(o)
+            if isinstance(o, np.int64):
+                return int(o)
+            if isinstance(o, frozenset):
+                return list(o)
             raise TypeError
 
         if filename is None:
@@ -112,17 +134,23 @@ class Trajectory:
                      "run_time": self.time,
                      "optional": optional,
                      "sampling_method": self.sampling_method,
-                     "trajectory": js_graphs
+                     "trajectory": js_graphs,
+                     "n_updates": self.n_updates,
+                     "n_samples": self.n_samples
                      }
         return mcmc_traj
 
 
     def from_json(self, mcmc_json):
-        graphs = [json_graph.node_link_graph(js_graph)
-                  for js_graph in mcmc_json["trajectory"]]
+        graphs = [
+            jtlib.to_frozenset(json_graph.node_link_graph(js_graph))
+            for js_graph in mcmc_json["trajectory"]]
 
         self.set_trajectory(graphs)
         self.set_time(mcmc_json["run_time"])
+        self.n_samples = mcmc_json['n_samples']
+        self.n_updates = mcmc_json['n_updates']
+        self.time = mcmc_json['run_time']
         self.optional = mcmc_json["optional"]
         self.sampling_method = mcmc_json["sampling_method"]
         if mcmc_json["model"]["name"] == "ggm_jt_post":
@@ -143,10 +171,7 @@ class Trajectory:
     def __str__(self):
         if self.sampling_method["method"] == "pgibbs":
             return "pgibbs_graph_trajectory_" + str(self.seqdist) + "_length_" + str(len(self.trajectory)) + \
-            "_N_" + str(self.sampling_method["params"]["N"]) + \
-            "_alpha_" + str(self.sampling_method["params"]["alpha"]) + \
-            "_beta_" + str(self.sampling_method["params"]["beta"]) + \
-            "_radius_" + str(self.sampling_method["params"]["radius"])
+            "_N_" + str(self.sampling_method["params"]["N"])
         elif self.sampling_method["method"] == "mh":
             return "mh_graph_trajectory_" + str(self.seqdist) + "_length_" + str(len(self.trajectory)) + \
                 "_randomize_interval_" + str(self.sampling_method["params"]["randomize_interval"])

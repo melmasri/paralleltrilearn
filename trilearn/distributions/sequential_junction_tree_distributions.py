@@ -135,8 +135,24 @@ class LogLinearJTPosterior(SequentialJTDistribution):
     def log_likelihood(self, graph):
         tree = trilearn.graph.decomposable.junction_tree(graph)
         separators = tree.get_separators()
-        return loglin.log_likelihood_partial(tree.nodes(), separators, self.no_levels, self.cell_alpha,
-                                             self.counts, self.data, self.levels, self.cache_complete_set_prob)
+        return loglin.log_likelihood_partial(tree.nodes(),
+                                             separators,
+                                             self.no_levels,
+                                             self.cell_alpha,
+                                             self.counts,
+                                             self.data,
+                                             self.levels,
+                                             self.cache_complete_set_prob)
+
+    def log_likelihood_partial(self, cliques, separators):
+        return loglin.log_likelihood_partial(cliques,
+                                             separators,
+                                             self.no_levels,
+                                             self.cell_alpha,
+                                             self.counts,
+                                             self.data,
+                                             self.levels,
+                                             self.cache_complete_set_prob)
 
     def log_ratio(self,
                   old_cliques,
@@ -160,10 +176,22 @@ class LogLinearJTPosterior(SequentialJTDistribution):
         """ Log-likelihood difference when cliques and separators are added and
             removed.
         """
-        old = loglin.log_likelihood_partial(old_cliques, old_separators, self.no_levels, self.cell_alpha,
-                                            self.counts, self.data, self.levels, self.cache_complete_set_prob)
-        new = loglin.log_likelihood_partial(new_cliques, new_separators, self.no_levels, self.cell_alpha,
-                                            self.counts, self.data, self.levels, self.cache_complete_set_prob)
+        old = loglin.log_likelihood_partial(old_cliques,
+                                            old_separators,
+                                            self.no_levels,
+                                            self.cell_alpha,
+                                            self.counts,
+                                            self.data,
+                                            self.levels,
+                                            self.cache_complete_set_prob)
+        new = loglin.log_likelihood_partial(new_cliques,
+                                            new_separators,
+                                            self.no_levels,
+                                            self.cell_alpha,
+                                            self.counts,
+                                            self.data,
+                                            self.levels,
+                                            self.cache_complete_set_prob)
         return new - old
 
     def __str__(self):

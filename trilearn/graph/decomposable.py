@@ -5,7 +5,6 @@ import networkx as nx
 import numpy as np
 
 from trilearn.graph import junction_tree as libj, junction_tree as jtlib
-from trilearn.graph import almond_tree as atlib
 from trilearn.graph import clique_graph as clib
 
 def separators(graph):
@@ -148,73 +147,6 @@ def junction_tree(graph):
     jt.add_edges_from(T.edges())
     jt.num_graph_nodes = len(graph)
     return jt
-
-def almond_tree(graph):
-    """ Returns the unique almond tree representation of graph.
-
-    Args:
-        graph (NetworkX graph): A decomposable graph
-
-    Returns:
-        NetworkX graph: An almond tree
-    """
-    jt = junction_tree(graph)
-    almondt = atlib.AlmondTree()
-    seps = jt.get_separators()
-    cliques = jt.nodes()
-    almondt.add_nodes_from(jt.nodes())
-    almondt.add_separators_from(seps.keys())
-    clique_sep_edges = []
-    for s, e in seps.items():
-        for c in cliques:
-            if s < c and s != frozenset([]):
-                clique_sep_edges.append((s, c))
-    # for s, e in seps.items():
-    #     for x in e:
-    #         l = list(x)
-    #         clique_sep_edges.append((s, l[0]))
-    #         clique_sep_edges.append((s, l[1]))
-    sep_sep_edges = []
-    for n1 in seps.keys():
-        for n2 in seps.keys():
-            if n1 < n2 and n1 != frozenset([]):
-                sep_sep_edges.append((n1, n2))
-    
-    almondt.add_edges_from(clique_sep_edges, cost=0)
-    almondt.add_edges_from(sep_sep_edges, cost=0)
-    # implementation from Jensen (1994) Optimal Junction tree, and
-    # Almond (1993) Optimality issues in constructing a Markov tree from Graphical Models
-    for s in seps.keys():
-        multi = len(seps[s]) + 1
-        n_edges_to_remove = almondt.degree(s) - multi
-        if n_edges_to_remove > 0:
-            nei_C = almondt.neighbors_cliques(s)
-            nei_S = almondt.neighbors_separators(s)
-            for n in nei_S:
-                nei_n_C = almondt.neighbors_cliques(n)
-                inter = list(set(nei_n_C) & set(nei_C))
-                if s < n and inter:
-                    for x in inter:
-                        if almondt.has_edge(x, s):
-                            almondt[x][s]['cost'] -= 1
-                            almondt[n][x]['cost'] -= 1
-                            almondt[x][n]['cost'] -= 1
-                    almondt[s][n]['cost'] -= 1
-
-    T = nx.minimum_spanning_tree(almondt, weight = 'cost')
-    at = atlib.AlmondTree()
-    at.clique_graph = almondt
-    at.add_nodes_from(jt.nodes())
-    at.add_separators_from(seps.keys())
-    at.add_edges_from(T.edges())
-
-    #testing number of degrees = multiplicity + 1
-    for sp in seps:
-        if at.degree(sp) != len(seps[sp]) + 1 and sp !=frozenset([]):
-            print('{} ({}, {})'.format(sp, at.degree(sp), len(seps[sp])+1))
-            import pdb; pdb.set_trace()
-
-    return at
 
 
 def clique_graph(graph):

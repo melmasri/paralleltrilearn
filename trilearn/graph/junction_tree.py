@@ -97,6 +97,8 @@ class JunctionTree(nx.Graph):
                     G.add_edge(n1, n2)
         return G
 
+
+
     def tuple(self):
         return(frozenset(self.nodes()), frozenset([frozenset(e) for e in self.edges()]))
 
@@ -656,4 +658,16 @@ def jt_to_prufer(tree):
     graph = nx.Graph()
     graph.add_nodes_from(range(tree.order()))
     graph.add_edges_from(edges)
-    prufer = to_prufer(graph)
+
+
+
+def to_frozenset(G):
+    """ Converts a graph with nodes and edges as lists, to a frozenset"""
+    g = nx.Graph()
+    for n1 in G.nodes():
+        g.add_node(frozenset(sorted(n1)))
+        
+    for n1, n2 in G.edges():
+        g.add_edge(frozenset(sorted(n1)), frozenset(sorted(n2)))
+    return g
+

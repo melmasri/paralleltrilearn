@@ -219,14 +219,20 @@ def gen_prec_mat(graph, a):
     return prec_mat
 
 
-def plot_multiple_traj_statistics(trajs, burnin_end,
-                                  write_to_file=False, annot=False, output_directory="./", file_extension="eps"):
-    trajectories = group_trajectories_by_setting(trajs)
+def plot_multiple_traj_statistics(trajs,
+                                  burnin_end,
+                                  write_to_file=True,
+                                  annot=False,
+                                  output_directory="./",
+                                  file_extension="eps"):
+    # trajectories = group_trajectories_by_setting(trajs)
+    trajectories = trajs
     if not os.path.exists(output_directory):
         os.mkdir(output_directory)
 
     for param_setting, traj_list in trajectories.items():
-        print("Setting: " + str(traj_list[0].sampling_method))
+        #import pdb; pdb.set_trace()
+        print("Setting: " + str(traj_list[0].sampling_method['method']))
         print("Average sample time: " + str(np.mean(traj_list[0].time)))
 
         sns.set_style("whitegrid")

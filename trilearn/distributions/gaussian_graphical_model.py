@@ -3,7 +3,7 @@ Gaussian graphical model.
 """
 
 import numpy as np
-
+import networkx as nx
 import trilearn.graph.decomposable
 from trilearn.distributions import wishart as wish
 import trilearn.graph.graph as glib
@@ -19,7 +19,10 @@ def log_likelihood(graph, S, n, D, delta, cache={}):
         delta (float): scale parameter
         n (int): number of data samples on which S is built
     """
-    tree = trilearn.graph.decomposable.junction_tree(graph)
+    if nx.is_tree(graph):
+        tree = graph
+    else:
+        tree = trilearn.graph.decomposable.junction_tree(graph)
     separators = jtlib.separators(tree)
     cliques = tree.nodes()
     return log_likelihood_partial(S, n, D, delta, cliques, separators, cache)
