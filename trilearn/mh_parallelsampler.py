@@ -50,6 +50,7 @@ def sample_trajectory(n_samples,
         return -a * len(clique)
     
     gtraj = mcmctraj.Trajectory()
+    gtraj.trajectory_type = "junction_tree"
     gtraj.set_sampling_method({"method": "mh",
                                "params": {"samples": n_samples,
                                           "randomize_interval": randomize}
@@ -138,9 +139,8 @@ def sample_trajectory(n_samples,
     # gtraj.set_trajectory(graphs)
     gtraj.set_trajectory(jt_traj)
     gtraj.n_updates = k
-    gtraj.n_samples = n_samples
     gtraj.logl = log_prob_traj
-    gtraj.time = toc - tic
+    gtraj.set_time(toc-tic)
     print('Total of {} updates, for an average of {:.2f} per iteration'.format(k, k/n_samples))
     return gtraj
 
@@ -221,14 +221,8 @@ def sample_trajectories_ggm_parallel(dataframe,
 
     if "output_directory" in args:
         dir = args["output_directory"]
-        date = datetime.datetime.today().strftime('%Y%m%d%H%m%S')
-        if not os.path.exists(dir):
-            os.mkdir(dir)
-
         for traj in rets:
-            filename = dir + "/" + str(traj) + "_" + date + ".json"
-            traj.write_file(filename=filename)
-  
+            write_to_file(traj, dir)
     return rets
 
 
@@ -281,8 +275,8 @@ def sample_trajectories_loglin_parallel(dataframe,
                                         pseudo_obs=[1.0, ],
                                         reset_cache=True,
                                         reps=1,
-                                        output_directory=".",
                                         **args):
+
     p = dataframe.shape[1]
     n_levels = np.array(dataframe.columns.get_level_values(1), dtype=int)
     levels = np.array([range(l) for l in n_levels])
@@ -314,14 +308,8 @@ def sample_trajectories_loglin_parallel(dataframe,
 
     if "output_directory" in args:
         dir = args["output_directory"]
-        date = datetime.datetime.today().strftime('%Y%m%d%H%m%S')
-        if not os.path.exists(dir):
-            os.mkdir(dir)
-
         for traj in rets:
-            filename = dir + "/" + str(traj) + "_" + date + ".json"
-            traj.write_file(filename=filename)
-
+            write_to_file(traj, dir)
     return rets
 
         
@@ -348,17 +336,21 @@ def trajectory_to_file(n_samples,
     #print (n_particles, alpha, beta, radius, n_samples, str(seqdist), reset_cache)
     graph_trajectory = sample_trajectory(n_samples, randomize,
                                          seqdist, reset_cache=reset_cache)
+    write_to_file(graph_trajectory, dir)
+
+    return graph_trajectory
+
+
+def write_to_file(graph_trajectory, dir):
     date = datetime.datetime.today().strftime('%Y%m%d%H%m%S')
     if not os.path.exists(dir):
         os.mkdir(dir)
 
-    filename = dir + "/" + str(graph_trajectory) +"_"+ date + ".json"
+    filename = dir + "/" + str(graph_trajectory) + "_" + date + ".json"
 
     graph_trajectory.write_file(filename=filename)
     print("wrote file: " + filename)
-
-    return graph_trajectory
-
+   
 
 def trajectory_to_queue(n_samples,
                         randomize,

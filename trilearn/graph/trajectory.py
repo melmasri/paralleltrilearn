@@ -24,8 +24,8 @@ class Trajectory:
         self.logl = []
         self._size = []
         self._jtsize = []
-        self.n_samples = 0
         self.n_updates = 0
+        self.trajectory_type = 'junction_tree'
 
     def set_sampling_method(self, method):
         self.sampling_method = method
@@ -74,7 +74,10 @@ class Trajectory:
 
     def log_likelihood(self, from_index=0):
         if self.logl == []:
-            self.logl = [self.seqdist.log_likelihood(g) for g in self.trajectory]
+            if self.trajectory_type=="junction_tree":
+                self.logl = [self.seqdist.log_likelihood(jtlib.graph(g)) for g in self.trajectory]
+            else:
+                self.logl = [self.seqdist.log_likelihood(g) for g in self.trajectory]
         return pd.Series(self.logl[from_index:])
 
     def maximum_likelihood_graph(self):
@@ -112,8 +115,8 @@ class Trajectory:
         """
         
         def default(o):
-            if isinstance(o, np.int64):
-                return int(o)
+            if isinstance(o, np.int64) or isinstance(o, np.float):
+                return o
             if isinstance(o, frozenset):
                 return list(o)
             raise TypeError
@@ -136,7 +139,7 @@ class Trajectory:
                      "sampling_method": self.sampling_method,
                      "trajectory": js_graphs,
                      "n_updates": self.n_updates,
-                     "n_samples": self.n_samples
+                     "trajectory_type": self.trajectory_type
                      }
         return mcmc_traj
 
@@ -148,11 +151,11 @@ class Trajectory:
 
         self.set_trajectory(graphs)
         self.set_time(mcmc_json["run_time"])
-        self.n_samples = mcmc_json['n_samples']
-        self.n_updates = mcmc_json['n_updates']
-        self.time = mcmc_json['run_time']
-        self.optional = mcmc_json["optional"]
         self.sampling_method = mcmc_json["sampling_method"]
+        self.n_updates = mcmc_json['n_updates']
+        self.optional = mcmc_json["optional"]
+        self.trajectory_type = mcmc_json["trajectory_type"]
+
         if mcmc_json["model"]["name"] == "ggm_jt_post":
             self.seqdist = sd.GGMJTPosterior()
         elif mcmc_json["model"]["name"] == "loglin_jt_post":

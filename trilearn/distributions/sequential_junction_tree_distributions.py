@@ -3,7 +3,7 @@ Junction tree distributions suitable for SMC sampling.
 """
 
 import numpy as np
-
+import networkx as nx
 import trilearn.graph.decomposable
 from trilearn.distributions import gaussian_graphical_model
 from trilearn.distributions import discrete_dec_log_linear as loglin
